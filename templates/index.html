@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Profe Ayuda 👩‍🏫✨</title>
+  <style>
+    :root{
+      --bg:linear-gradient(180deg,#fff9f1 0%,#fdf5ff 100%);
+      --primary:#663399;
+      --accent1:#ffcc70;
+      --accent2:#ff9ff3;
+      --card:#fff;
+      --bubble-user:#eef7ff;
+      --bubble-assistant:#faf8ff;
+      --dot:#ff9ff3;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:"Poppins","Comic Sans MS",system-ui,Segoe UI,Roboto,sans-serif;
+      background:var(--bg); color:#333;
+    }
+    header{
+      background:linear-gradient(90deg,var(--accent1),var(--accent2));
+      color:#fff; padding:14px 16px; border-bottom:4px solid #f7a8a8;
+      display:flex; align-items:center; gap:12px; justify-content:space-between; flex-wrap:wrap;
+    }
+    header h1{margin:0; font-size:1.2rem; letter-spacing:.3px}
+    header .right{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .badge{font-weight:600; font-size:.95rem}
+    .ghost{
+      background:transparent; color:#fff; border:2px solid rgba(255,255,255,.7);
+      padding:8px 12px; border-radius:10px; cursor:pointer
+    }
+    main{max-width:1100px; margin:0 auto; padding:18px}
+    .app{ display:grid; grid-template-rows:1fr auto; gap:14px; height:calc(100vh - 110px); }
+    .chat{
+      background:var(--card); border-radius:16px; padding:16px;
+      box-shadow:0 6px 20px rgba(0,0,0,.07); overflow:auto;
+    }
+    .msg{ display:flex; gap:12px; margin:10px 0; align-items:flex-start; }
+    .avatar{
+      width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+      background:#ffd6f6; box-shadow:0 0 0 3px #ffe8f8 inset; font-size:18px;
+    }
+    .avatar.user{background:#d6ebff; box-shadow:0 0 0 3px #e9f3ff inset}
+    .bubble{
+      max-width:780px; padding:12px 14px; border-radius:14px; white-space:pre-wrap; line-height:1.42;
+      border:1.5px dashed #e4d7ff; background:var(--bubble-assistant);
+    }
+    .user .bubble{background:var(--bubble-user); border:1.5px dashed #cfe7ff}
+    .bubble img{
+      max-width:360px; border-radius:10px; margin-top:8px; background:#fff;
+      border:3px solid #ffd6f6; box-shadow:0 0 15px rgba(255,192,203,.3)
+    }
+    .composer{
+      background:var(--card); border-radius:16px; padding:14px;
+      box-shadow:0 6px 20px rgba(0,0,0,.07); display:grid; gap:10px;
+    }
+    .row{display:flex; gap:10px; align-items:center}
+    textarea{
+      flex:1; min-height:90px; resize:vertical; border-radius:12px; border:2px solid #ffd1dc;
+      padding:12px; font-size:1rem; outline:none; transition:all .2s;
+    }
+    textarea:focus{border-color:#ff9ff3; box-shadow:0 0 8px #ffc2e0}
+    .btn{
+      background:linear-gradient(90deg,#ffb6c1,#ffa07a); border:none; color:#fff; cursor:pointer;
+      padding:12px 16px; border-radius:12px; font-weight:600; transition:transform .15s
+    }
+    .btn:hover{transform:translateY(-1px)}
+    .loader{display:none; text-align:center}
+    .loader span{display:inline-block; width:10px; height:10px; background:var(--dot); border-radius:50%; margin:0 4px; animation:bounce 1.4s infinite ease-in-out both}
+    .loader span:nth-child(1){animation-delay:-0.32s}
+    .loader span:nth-child(2){animation-delay:-0.16s}
+    @keyframes bounce{0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)}}
+
+    .modal{position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.35); padding:18px}
+    .modal .card{max-width:720px; background:#fff; border-radius:16px; padding:18px 20px; box-shadow:0 10px 30px rgba(0,0,0,.2)}
+    .modal h3{margin:6px 0 8px 0; color:var(--primary)}
+    .modal .close{float:right; background:#f4f4f4; border:none; padding:6px 10px; border-radius:8px; cursor:pointer}
+    footer{margin-top:10px; text-align:center; color:#777; font-size:.9rem}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>👩‍🏫 Profe Ayuda — Tu profe digital ✨</h1>
+    <div class="right">
+      <span class="badge">Proyecto de Maestría UEES — Galo González · Jorge Orellana</span>
+      <button class="ghost" id="btn-ethics">Ética con IA</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="app">
+      <!-- Historial -->
+      <div id="chat" class="chat" aria-live="polite"></div>
+
+      <!-- Compositor -->
+      <div class="composer">
+        <div class="row">
+          <textarea id="question" placeholder="Escribe tu pregunta… Ej: ¿Cómo hallo el área de un triángulo?"></textarea>
+        </div>
+        <div class="row" style="justify-content:space-between">
+          <div class="loader" id="loader"><span></span><span></span><span></span></div>
+          <div style="display:flex; gap:8px">
+            <button class="btn" onclick="sendMessage()">💬 Preguntar</button>
+            <button class="btn" onclick="drawOnly()">🎨 Dibujar ejemplo</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <footer>© Profe Ayuda</footer>
+  </main>
+
+  <!-- Modal ética -->
+  <div id="modal-ethics" class="modal" role="dialog" aria-modal="true" aria-labelledby="ethics-title">
+    <div class="card">
+      <button class="close" onclick="toggleEthics(false)">Cerrar</button>
+      <h3 id="ethics-title">Ética con IA</h3>
+      <p>
+        Este prototipo educativo usa IA para apoyar el aprendizaje con explicaciones cortas y ejemplos visuales.
+        Promovemos el uso responsable: citar fuentes cuando corresponda, respetar la privacidad, evitar sesgos y
+        verificar resultados antes de tomar decisiones. La IA no reemplaza al docente; es una herramienta de apoyo.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const chatEl = document.getElementById('chat');
+    const loader = document.getElementById('loader');
+    const input = document.getElementById('question');
+    const history = [];
+
+    // Estado para corrección inmediata
+    let lastExpected = null;  // número esperado (del backend)
+    let lastKind = null;      // triangle | rectangle | circle
+    let lastPrompt = null;
+
+    function render(){
+      chatEl.innerHTML = '';
+      for (const msg of history){
+        const div = document.createElement('div');
+        div.className = 'msg ' + (msg.role === 'user' ? 'user' : 'assistant');
+
+        const avatar = document.createElement('div');
+        avatar.className = 'avatar ' + (msg.role === 'user' ? 'user' : '');
+        avatar.textContent = msg.role === 'user' ? '👤' : '👩‍🏫';
+        div.appendChild(avatar);
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.textContent = msg.text || '';
+        if (msg.image){
+          const im = document.createElement('img');
+          im.src = msg.image;
+          im.alt = 'Dibujo generado';
+          bubble.appendChild(im);
+        }
+        div.appendChild(bubble);
+
+        chatEl.appendChild(div);
+      }
+      chatEl.scrollTop = chatEl.scrollHeight;
+    }
+
+    function push(role, text, image){
+      history.push({role, text, image});
+      render();
+    }
+
+    // Parse de número del alumno (acepta , o .)
+    function parseNumberLike(s){
+      if (!s) return null;
+      const m = s.trim().match(/^[-+]?\s*\d+(?:[.,]\d+)?$/);
+      if (!m) return null;
+      return parseFloat(s.replace(',', '.'));
+    }
+
+    function giveFeedback(userVal){
+      if (lastExpected == null) return false;
+      const tol = Math.max(0.01, Math.abs(lastExpected) * 0.01); // tolerancia 1% o 0.01
+      if (Math.abs(userVal - lastExpected) <= tol){
+        push('assistant', `¡Muy bien! Tu resultado (${userVal}) es correcto ✅. ¿Probamos otro ejercicio o prefieres un ejemplo similar?`);
+        lastExpected = null; lastKind = null; lastPrompt = null;
+      } else {
+        push('assistant', `Casi 🤏. Tu resultado (${userVal}) no coincide. Si quieres te muestro otro ejemplo y vuelves a intentarlo. Escribe "Dibujar" para ver la figura.`);
+      }
+      return true;
+    }
+
+    async function sendMessage(){
+      const q = input.value.trim();
+      if(!q){ alert('Escribe tu pregunta 😊'); return; }
+
+      // Corrección inmediata si hay número y esperamos resultado
+      const maybeNum = parseNumberLike(q);
+      if (maybeNum !== null && lastExpected != null){
+        push('user', q);
+        input.value = '';
+        giveFeedback(maybeNum);
+        return;
+      }
+
+      push('user', q);
+      input.value = '';
+      loader.style.display = 'block';
+
+      try{
+        const res = await fetch('/chat', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ query: q, top_k: 3, draw_example: false })
+        });
+        const data = await res.json();
+        loader.style.display = 'none';
+        console.log('[CHAT][RESP]', data);
+
+        if(data.ok){
+          push('assistant', data.answer);
+
+          if (typeof data.expect === 'number'){
+            lastExpected = data.expect;
+            lastKind = data.kind || null;
+            lastPrompt = q;
+          } else {
+            lastExpected = null; lastKind = null; lastPrompt = null;
+          }
+        }else{
+          push('assistant', data.answer || '⚠️ No pude responder. Intenta de nuevo.');
+        }
+      }catch(e){
+        loader.style.display = 'none';
+        push('assistant', '⚠️ Error de conexión con el servidor.');
+      }
+    }
+
+    // Dibuja usando /chat para mantener continuidad (texto + imagen juntos)
+    async function drawOnly(){
+      const q = input.value.trim();
+      if(!q){ alert('Primero escribe la consigna a dibujar 😅'); return; }
+      push('user', 'Dibujar: ' + q);
+      loader.style.display = 'block';
+
+      try{
+        const res = await fetch('/chat', {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({ query: q, top_k: 3, draw_example: true })
+        });
+        const data = await res.json();
+        loader.style.display = 'none';
+        console.log('[DRAW][RESP]', data);
+
+        if (data.ok){
+          // texto
+          push('assistant', data.answer || 'Aquí está tu dibujo 😊');
+          // imagen
+          if (data.image_url) {
+            const img = data.image_url + '?t=' + Date.now(); // evita caché
+            history[history.length-1].image = img;
+            render();
+          }
+          if (typeof data.expect === 'number'){
+            lastExpected = data.expect; lastKind = data.kind || null; lastPrompt = q;
+          }
+        }else{
+          push('assistant', data.answer || 'No pude generar el dibujo 😢');
+        }
+      }catch(e){
+        loader.style.display = 'none';
+        push('assistant', '⚠️ Error al conectar con el generador de dibujos.');
+      }
+    }
+
+    // Enviar con Enter (Shift+Enter = salto de línea)
+    input.addEventListener('keydown', (ev)=>{
+      if(ev.key === 'Enter' && !ev.shiftKey){
+        ev.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Modal ética
+    const modal = document.getElementById('modal-ethics');
+    document.getElementById('btn-ethics').addEventListener('click', ()=>toggleEthics(true));
+    function toggleEthics(show){ modal.style.display = show ? 'grid' : 'none'; }
+    modal.addEventListener('click', (e)=>{ if(e.target === modal) toggleEthics(false); });
+
+    // Mensaje de bienvenida
+    push('assistant','¡Hola! Soy Profe Ayuda. Escríbeme una pregunta y te respondo en pasos numerados. También puedo dibujar ejemplos 😊');
+  </script>
+</body>
+</html>
+
